@@ -1,0 +1,300 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>测试丁丁</title>
+    <script src="//g.alicdn.com/dingding/dingtalk-jsapi/2.6.0/dingtalk.open.js"></script>
+    <script src="~/Scripts/vue.js"></script>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="row " id="divDing" style="margin:35px">
+        <div class="row">
+            <div class="col-lg-4">
+                钉钉ID：{{user[0].DingDingUserID}}
+            </div>
+            <div class="col-lg-4">
+                钉钉员工姓名：{{user[0].DingDingUserName}}
+            </div>
+            <div class="col-lg-4">
+                钉钉员工电话：{{user[0].DingDingPhone}}
+            </div>
+            <div class="col-lg-4">
+                CCHR员工ID：{{user[0].EmpID}}
+            </div>
+            <div class="col-lg-4">
+                CCHR员工姓名：{{user[0].EmpName}}
+            </div>
+            <div class="col-lg-4">
+                CCHR员工编号：{{user[0].EmpNo}}
+            </div>
+            <div class="col-lg-4">
+                CCHR员工AD：{{user[0].DomainAccount}}
+            </div>
+            <br />
+        </div>
+        <div class="row ">
+            <div class="col-lg-4">
+                部门员工列表 ： 
+                <select v-model="userid" style="width:150px;height:30px">
+                    <option>请选择</option>
+                    <option v-for="item in deptUser" v-bind:value="item.userid">{{item.name}}</option>
+                </select>
+            </div>
+            <div class="col-lg-4">
+                <button type="button" class="btn btn-primary " v-on:click="ClickChooseContacts">打开联系人</button>
+                <br />
+                <input type="text" style="width:130px" v-model="message.text.content">
+                <button type="button" class="btn btn-primary " v-on:click="ClickSendMessage">发送消息</button>
+            </div>
+            <br />
+            <div class="col-lg-4 ">
+                <button type="button" class="btn btn-primary" id="btnSendSession">发起会话（单聊）</button>
+                <button type="button" class="btn btn-primary" id="btnChoiceSession">选择会话</button>
+            </div>
+            <br/>
+            <div class="col-lg-4 ">
+                
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+            vm.GetDeptUserList();
+        });
+
+        var _config = {
+            agentId: "@ViewBag.AgentId",
+            corpId: "@ViewBag.CorpId",
+            timeStamp: "@ViewBag.TimeStamp",
+            nonceStr: "@ViewBag.NonceStr",
+            signature: "@ViewBag.Signature"
+        }
+        console.log(_config);
+
+        var model = {
+            jsapi_ticket: "@ViewBag.JsApiTicket",
+            noncestr: "@ViewBag.NonceStr",
+            timestamp: "@ViewBag.TimeStamp",
+            url: "@ViewBag.Url"
+        }
+
+        console.log(model);
+
+        dd.config({
+            agentId: _config.agentId,
+            corpId: _config.corpId,
+            timeStamp: _config.timeStamp,
+            nonceStr: _config.nonceStr,
+            signature: _config.signature,
+            type:0,
+            jsApiList: ['runtime.info',
+                        'biz.contact.choose',
+                        'device.notification.confirm',
+                        'device.notification.alert',
+                        'device.notification.prompt',
+                        'biz.ding.post',
+                        'biz.util.openLink',
+                        'biz.chat.chooseConversationByCorpId',
+                        'biz.chat.toConversation',
+                        'biz.chat.pickConversation',
+                        'biz.chat.openSingleChat']
+        });
+
+        dd.ready(function () {
+                //dd.runtime.info({
+                //    onSuccess: function (info) {
+                //        logger.e('runtime info: ' + JSON.stringify(info));
+
+                //    },
+                //    onFail: function (err) {
+                //        logger.e('fail: ' + JSON.stringify(err));
+                //    }
+                //});
+                dd.runtime.permission.requestAuthCode({
+                    corpId: _config.corpId,
+                    onSuccess: function (info) {//成功获得code值,code值在info中
+                        sessionStorage.setItem("authcode", info.code);
+                        $.ajax({
+                            url: "/dingtalk-api/DingTalk/GetDingDingUserInfo?code=" + info.code,
+                            type: 'GET',
+                            success: function (data) {
+                                var user = JSON.parse(data);
+                                if (user.errcode != 0) {
+                                    alert(user.errmsg);
+                                } else {
+                                    $.ajax({
+                                        url: '@Url.Action("GetUserInfo", "DingTalk")?dingDingUserID=' + user.userid,
+                                        type: 'GET',
+                                        success: function (datastr) {
+                                            var dataUserInfo = JSON.parse(datastr);
+                                            vm.user = dataUserInfo;
+                                        }
+                                    })
+                                }
+                            }
+                        })
+
+                    },
+                    onFail: function (err) {//获得code值失败
+                        alert('fail: ' + JSON.stringify(err));
+                    }
+                });
+
+                $("#btnSendSession").on('click', function () {
+ 
+                    dd.biz.chat.openSingleChat({
+                        corpId: _config.corpId, //企业id,必须是用户所属的企业的corpid
+                        userId: vm.userid, // 用户的工号
+                        isConfirm: 'false', //是否弹出确认窗口，默认为true
+                        onSuccess: function () {  },
+                        onFail: function () {  }
+                    });
+                });
+
+                $("#btnChoiceSession").on('click', function () {
+                    dd.biz.chat.chooseConversationByCorpId({
+                        corpId:  _config.corpId, ////企业id,必须是用户所属的企业的corpid
+                        onSuccess: function (info) {
+                            alert("chatId  " + info.chatId + "  title " + info.title);
+                            dd.biz.chat.toConversation({
+                                corpId: _config.corpId, ////企业id,必须是用户所属的企业的corpid
+                                chatId: info.chatId,//会话Id
+                                onSuccess: function () { },
+                                onFail: function () { }
+                            })
+                        },
+                        onFail: function () { }
+                    })
+                });
+            
+            //会话
+            //dd.biz.chat.pickConversation({
+            //    corpId: _config.corpId, //企业id,必须是用户所属的企业的corpid
+            //    isConfirm:'false', //是否弹出确认窗口，默认为true
+            //    onSuccess: function () {
+            //        //onSuccess将在选择结束之后调用
+            //        // 该cid和服务端开发文档-普通会话消息接口配合使用，而且只能使用一次，之后将失效
+            //        /*{
+            //            cid: 'xxxx',
+            //            title:'xxx'
+            //        }*/
+            //    },
+            //    onFail: function (err) { alert('fail: ' + JSON.stringify(err)); }
+            //});
+        });
+
+
+        dd.error(function (err) {
+            alert('dd error: ' + JSON.stringify(err));
+        });
+
+        var vm = new Vue({
+            el: "#divDing",
+            data: {
+                user: [{
+                    DingDingUserID: '',
+                    DingDingUserName: '',
+                    DingDingPhone: '',
+                    EmpID: '',
+                    EmpName: '',
+                    EmpNo: '',
+                    DomainAccount: ''
+                }],
+                cid: "",
+                title: "",
+                deptUser: [],
+                userid: "",
+                message: {
+                    msgtype: 'text',
+                    text: {
+                        content: ''
+                    }
+                }
+
+
+            },
+            methods: {
+                ClickChooseContacts: function () {
+                    dd.biz.chat.pickConversation({
+                        corpId: _config.corpId, //企业id,必须是用户所属的企业的corpid
+                        isConfirm: 'true', //是否弹出确认窗口，默认为true
+                        onSuccess: function (info) {
+                            //onSuccess将在选择结束之后调用
+                            // 该cid和服务端开发文档-普通会话消息接口配合使用，而且只能使用一次，之后将失效
+                            /*{
+                                cid: 'xxxx',
+                                title:'xxx'
+                            }*/
+                            vm.cid =info.cid;
+                            vm.title = info.title;
+                            //alert("cid: " + vm.cid + "  title:  " + vm.title);
+                        },
+                        onFail: function (err) { alert('fail: ' + JSON.stringify(err)); }
+                    });
+                },
+                GetDeptUserList: function () {
+                    $.ajax({
+                        url: '@Url.Action("GetDeptUserInfoList", "DingTalk")?dingDingDeptID=109334165',
+                        type: 'GET',
+                        success: function (datastr) {
+                            var deptUserInfo = JSON.parse(datastr);
+                            vm.deptUser = deptUserInfo.userlist;
+                        }
+                    })
+                },
+                ClickSendMessage: function () {
+                    $.ajax({
+                        url: '@Url.Action("SendMessage", "DingTalk")?userid='+ vm.userid+'&cid=' + vm.cid + "&message=" + JSON.stringify(vm.message),
+                        type: 'GET',
+                        success: function (datastr) {
+                            //alert(datastr);
+                            var datamodel = JSON.parse(datastr);
+                            dd.device.notification.alert({
+                                message: "消息已发送", "title": "提示", "buttonName": "收到",
+                                onSuccess: function () {  },
+                                onFail: function (err) { alert('fail: ' + JSON.stringify(err)); }
+                            });
+                            
+                        }
+                    })
+                }
+            }
+        });
+
+
+
+
+        //function UserInfo() {
+        //    var _this = this;
+        //    _this.data = {
+        //        user: {
+        //            DingDingUserID: '',
+        //            DingDingUserName: '',
+        //            DingDingPhone: '',
+        //            EmpID: '',
+        //            EmpName: '',
+        //            EmpNo: '',
+        //            DomainAccount:'',
+        //        }
+        //    };
+
+        //    _this.vm = new Vue({
+        //        el:"#divDing",
+        //        data: {
+        //            user: _this.data.user
+        //        },
+        //    });
+        //}
+
+    </script>
+
+</body>
+</html>

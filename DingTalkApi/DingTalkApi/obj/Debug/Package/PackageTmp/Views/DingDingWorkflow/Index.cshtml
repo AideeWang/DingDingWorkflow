@@ -1,0 +1,434 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap-select.css" rel="stylesheet" />
+
+    <script src="~/Scripts/jquery-1.11.2.js"></script>
+    <script src="~/Scripts/jquery-ui-1.10.1.custom.min.js"></script>
+    <script src="~/Scripts/vue.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+
+
+    <script src="~/Scripts/common.js"></script>
+
+    @*<!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>*@
+    <link href="~/Content/element-ui.css" rel="stylesheet" />
+        <script src="~/Scripts/element-ui.js"></script>
+    <style>
+        .el-row {
+            margin-bottom: 20px;
+            &:last-child;
+
+        {
+            margin-bottom: 0;
+        }
+
+        }
+
+        .el-col {
+            border-radius: 4px;
+        }
+
+
+
+        .bg-purple {
+            background: #d3dce6;
+        }
+
+        .bg-purple-light {
+            background: #e5e9f2;
+        }
+
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+
+        .row-bg {
+            padding: 10px 0;
+            background-color: #f9fafc;
+        }
+
+        .row {
+            margin-top: 10px;
+        }
+        .mar-left {
+            margin-left: 23px;
+        }
+    </style>
+</head>
+
+<body style="padding: 0px 400px 0px 400px;">
+    <br />
+
+    <div id="divDing">
+        <el-menu :default-active="activeindex"
+                 class="el-menu-demo"
+                 mode="horizontal"
+                 background-color="#545c64"
+                 text-color="#fff"
+                 active-text-color="#ffd04b">
+            <el-menu-item index="1" v-on:click="activeitem('1')"><div class="text-center col-lg-4">流程</div></el-menu-item>
+            <el-menu-item index="2" v-on:click="activeitem('2')"><div class="text-center col-lg-4">回调</div></el-menu-item>
+            <el-menu-item index="2" v-on:click="activeitem('3')"><div class="text-center col-lg-4">日志</div></el-menu-item>
+        </el-menu>
+        <div v-show="activeindex==1" class="mar-left">
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">请假类型：</label></div>
+                <div class="col-lg-4">
+                    <el-select v-model="leavetype" placeholder="请选择">
+                        <el-option v-for="item in leavetypelist" :key="item.key" :label="item.value" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">发起人：</label></div>
+                <div class="col-lg-4">
+                    @*<select class=" dropdown  bootstrap-select bs3" id="selstartUser">
+                        <option value="172849403829072399">王云宵</option>
+                        <option value="a30fcb94-c3b7-461a-8a30-b516fbcbe628">贺冬波</option>
+                        <option value="135544392730962355">窦思昊</option>
+                        <option value="6d62655f-be9d-4f37-905c-082a1b606646">王荣昌</option>
+                    </select>*@
+                    <el-select v-model="user.id" placeholder="请选择" v-on:change="getdeptinfo()">
+                        <el-option v-for="item in userlist" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">发起人所属部门：</label></div>
+                <div class="col-lg-4">
+                    <el-select v-model="dept.id" placeholder="请选择">
+                        <el-option v-for="item in deptlist" :key="item.id" :label="item.name" :value="item.id">
+                        </el-option>
+                    </el-select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">开始时间：</label></div>
+                <div class="col-lg-4">
+                    <el-date-picker v-model="startdate"
+                                    type="date"
+                                    value-format="yyyy-MM-dd"
+                                    placeholder="选择日期">
+                    </el-date-picker>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">结束时间：</label></div>
+                <div class="col-lg-4">
+                    <el-date-picker v-model="enddate"
+                                    type="date"
+                                    value-format="yyyy-MM-dd"
+                                    placeholder="选择日期">
+                    </el-date-picker>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">请假事由：</label></div>
+                <div class="col-lg-4">
+                    <el-input v-model="reasonleave" placeholder="请输入内容"></el-input>
+                </div>
+            </div>
+            <br />
+            <div class="row">
+                <button type="button" class="btn btn-primary col-lg-4" style="margin-left:13px;" v-on:click="startprocess()">发起流程</button>
+            </div>
+            <div class="row">
+                <hr />
+            </div>
+            <div class="row">
+                <div class="col-lg-2">
+                    <label class="control-label" style="line-height: 34px">流程实例ID：</label>
+                </div>
+                <div class="col-lg-4">
+                    <el-tag style="width:100%;">{{process_instance_id}}</el-tag>
+                </div>
+                <div class="col-lg-4">
+                    <button type="button" class="btn btn-primary" v-on:click="getprocessinfo()">获取流程实例</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <el-tag>{{processinfo}}</el-tag>
+                </div>
+            </div>
+            <div class="row">
+                <hr />
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">流程发起人：</label></div>
+                <div class="col-lg-4">
+                    @*<select class=" dropdown  bootstrap-select bs3" id="selstartUser">
+                        <option value="172849403829072399">王云宵</option>
+                        <option value="a30fcb94-c3b7-461a-8a30-b516fbcbe628">贺冬波</option>
+                        <option value="135544392730962355">窦思昊</option>
+                        <option value="6d62655f-be9d-4f37-905c-082a1b606646">王荣昌</option>
+                    </select>*@
+                    <el-select v-model="userids" multiple placeholder="请选择">
+                        <el-option v-for="item in userlist" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>
+                <div class="col-lg-4">
+                    <el-date-picker v-model="startenddate"
+                                    type="daterange"
+                                    value-format="yyyy-MM-dd"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期">
+                    </el-date-picker>
+                </div>
+                <div class="col-lg-4">
+                    <button type="button" class="btn btn-primary" v-on:click="getprocessidlist()">批量获取流程实例ID</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <el-tag style="width:400px;">{{processids}}</el-tag>
+                </div>
+            </div>
+        </div>
+        <div v-show="activeindex==2" class="mar-left">
+            <div class="row">
+                <div class="col-lg-6">
+                    <button type="button" class="btn btn-primary" v-on:click="registercallback()">注册回调接口</button>
+                </div>
+            </div>
+        </div>
+        <div v-show="activeindex==3" class="mar-left">
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">开始时间：</label></div>
+                <div class="col-lg-4">
+                    <el-date-picker v-model="enddate"
+                                    type="date"
+                                    value-format="yyyy-MM-dd"
+                                    placeholder="选择日期">
+                    </el-date-picker>
+                </div>
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">结束时间：</label></div>
+                <div class="col-lg-4">
+                    <el-date-picker v-model="enddate"
+                                    type="date"
+                                    value-format="yyyy-MM-dd"
+                                    placeholder="选择日期">
+                    </el-date-picker>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">模版名称:</label></div>
+                <div class="col-lg-4">
+                    <el-select v-model="templatename" multiple placeholder="请选择">
+                        <el-option v-for="tem in templatelist" :key="tem" :label="tem" :value="tem">
+                        </el-option>
+                    </el-select>
+                </div>
+                <div class="col-lg-2"><label class="control-label" style="line-height: 34px">所属人&nbsp;:</label></div>
+                <div class="col-lg-4">
+                    <el-select v-model="useridtem" multiple placeholder="请选择">
+                        <el-option v-for="item in userlist" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </div>    
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8">
+                    <el-table :data="datejournallist" style="width: 100%">
+                        <el-table-column prop="startdate" label="创建时间" width="180">
+                        </el-table-column>
+                        <el-table-column prop="date" label="标题" width="180">
+                        </el-table-column>
+                        <el-table-column prop="name" label="金额" width="180">
+                        </el-table-column>
+                        <el-table-column prop="address" label="选项">
+                        </el-table-column>
+                        <el-table-column prop="address" label="选项">
+                        </el-table-column>
+                    </el-table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+    $(function () {
+
+    });
+
+
+
+
+    var vm = new Vue({
+        el: "#divDing",
+        data: {
+            userlist: [{
+                value: '172849403829072399',
+                label: '王云宵'
+            }, {
+                value: 'a30fcb94-c3b7-461a-8a30-b516fbcbe628',
+                label: '贺冬波'
+            }, {
+                value: '135544392730962355',
+                label: '窦思昊'
+            }, {
+                value: '6d62655f-be9d-4f37-905c-082a1b606646',
+                label: '王荣昌'
+            }],
+            user: {
+                id: '172849403829072399',
+                name: '王云宵'
+            },
+            dept: {
+                id: '',
+                name: ''
+            },
+            deptlist: [],
+            startdate: '',
+            enddate: '',
+            reasonleave: '',
+            leavetype: '',
+            leavetypelist: '',
+            message: {
+                issuccess: true,
+                text: ''
+            },
+            process_instance_id: '',
+            processinfo: '',
+            processids:'',
+            userids:'',
+            useridtem:'',
+            startenddate:'',
+            error: {},
+            activeindex:"1",
+            datejournallist:[],
+            templatelist:['测试日志','日报','周报','月报'],
+            templatename:''
+        },
+        created: function () {
+            this.getdeptinfo();
+            this.getleavetypelist();
+        },
+        methods: {
+            getdeptinfo: function () {
+                $.ajax({
+                    url: '@Url.Action("GetDeptInfByUserId", "DingDingWorkflow")?UserId=' + this.user.id,
+                    type: 'GET',
+                    success: function (data) {
+                        //alert(data);
+                        vm.deptlist = JSON.parse(data);
+                        if (vm.deptlist.length > 0) {
+                            vm.dept = vm.deptlist[0];
+                        }
+                        //console.log(vm.deptlist);
+                    }
+                })
+            },
+            startprocess: function () {
+                console.log(this);
+                $.ajax({
+                    url: '@Url.Action("CreateProcessInstances", "DingDingWorkflow")?Leavetype=' + this.leavetype + '&StartUserId=' + this.user.id + "&StartDeptId=" + this.dept.id + "&StartDate=" + this.startdate + "&EndDate=" + this.enddate + "&ReasonLeave=" + this.reasonleave,
+                    type: 'GET',
+                    success: function (data) {
+                        console.log(data);
+                        var result = JSON.parse(data);
+                        if (result.errcode == "0") {
+                            vm.message = { issuccess: true, text: '发起流程成功' };
+                            vm.process_instance_id = result.process_instance_id;
+                        } else {
+                            vm.message = { issuccess: false, text: '发起流程失败' };
+                        }
+                        vm.opensuccess();
+                    }
+                })
+            },
+            getleavetypelist: function () {
+                $.ajax({
+                    url: '@Url.Action("GetLeaveTypeList", "DingDingWorkflow")',
+                    type: 'GET',
+                    success: function (data) {
+                        vm.leavetypelist = JSON.parse(data);
+                        if (vm.leavetypelist.length > 0) {
+                            vm.leavetype = vm.leavetypelist[0].value;
+                        }
+                        //console.log(vm.leavetypelist);
+                    }
+                })
+            },
+            opensuccess: function () {
+                this.$message({
+                    message: vm.message.text,
+                    type: vm.message.issuccess ? 'success' : 'warning'
+                });
+            },
+            getprocessinfo: function () {
+                $.ajax({
+                    url: '@Url.Action("GetProcessInfo", "DingDingWorkflow")?ProcessId=' + this.process_instance_id,
+                    type: 'GET',
+                    success: function (data) {
+                        vm.processinfo = JSON.parse(data);
+                       
+                        //console.log(vm.processinfo);
+                    }
+                })
+            },
+            getprocessidlist: function () {
+                $.ajax({
+                    url: '@Url.Action("GetProcessIdList", "DingDingWorkflow")?UserIds=' + this.userids + "&StartDate=" + this.startenddate[0] + "&EndDate=" + this.startenddate[1],
+                    type: 'GET',
+                    success: function (data) {
+                        vm.processids = JSON.parse(data);
+
+                        //console.log(vm.processids);
+                    }
+                })
+            },
+            registercallback: function () {
+                $.ajax({
+                    url: '@Url.Action("RegisterCallbackApi", "api/DingDingCallback")',
+                    type: 'GET',
+                    success: function (data) {
+                        vm.error = JSON.parse(data);
+                        if (vm.error.errcode == 0) {
+                            vm.message = { issuccess: true, text: vm.error.errmsg };
+                        } else {
+                            vm.message = { issuccess: false, text: vm.error.errmsg };
+                        }
+                        vm.opensuccess();
+                        //console.log(vm.processids);
+                    }
+                })
+            },
+            activeitem: function (index) {
+                this.activeindex = index;
+            },
+            getreportlistbyuserid:function(){
+                $.ajax({
+                    url: '@Url.Action("GetReportListByUserId", "api/ReportService")',
+                    type: 'GET',
+                    success: function (data) {
+                        vm.datejournallist = JSON.parse(data).result;
+                    }
+                })
+            }
+        }
+    });
+</script>
+
+
+
